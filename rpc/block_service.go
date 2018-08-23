@@ -28,7 +28,6 @@ type GetUTXOsResponse struct {
 	Transactions []chain.Transaction
 }
 
-
 type GetBalanceArgs struct {
 	UserAddress string
 }
@@ -45,12 +44,14 @@ func (t *BlockService) GetBlock(r *http.Request, args *GetBlocksArgs, reply *Get
 	log.Println("Received Block.GetBlocks request.")
 
 	height := args.Height
+	log.Println("Request for block height", height)
 
 	block, err := t.Storage.BlockAtHeight(height)
 
 	if err != nil {
 		return err
 	}
+	log.Println("Block Info", block)
 
 	txs, err := t.Storage.FindTransactionsByBlockNum(height)
 
