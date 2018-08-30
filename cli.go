@@ -125,6 +125,11 @@ func main() {
 			Action: plasma_tests.IntegrationTest,
 		},
 		{
+			Name:   "plasma-tests2",
+			Usage:  "Runs plasma integration tests.",
+			Action: plasma_tests.IntegrationTest,
+		},
+		{
 			Name:   "pq-tests",
 			Usage:  "Runs priority queue integration tests.",
 			Action: pq_tests.IntegrationTest,

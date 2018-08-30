@@ -47,6 +47,7 @@ func (t *BlockService) GetBlock(r *http.Request, args *GetBlocksArgs, reply *Get
 	log.Println("Request for block height", height)
 
 	block, err := t.Storage.BlockAtHeight(height)
+	log.Println("Block Info", err)
 
 	if err != nil {
 		return err

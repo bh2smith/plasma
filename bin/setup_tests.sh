@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 DATA_DIR=$1
+echo "data dir is ${DATA_DIR}"
 GETH_DATA_DIR="${DATA_DIR}/chain"
 
 FIRST_USER_SUFFIX=$(printf '\n\n' | geth --datadir "${GETH_DATA_DIR}" account new  | grep "Address" | awk '{ printf("%s\n", substr($2, 2, 40)) }')
@@ -36,14 +37,14 @@ echo "${OPTIONS}" | mustache ./mustache/test-config.mustache | tee $DATA_DIR/tes
 # Unlock accounts
 UNLOCK=$(geth --exec 'var i; for (i=0; i < eth.accounts.length; i++) { personal.unlockAccount(eth.accounts[i], "", 0) }' attach ipc:"${GETH_DATA_DIR}/geth.ipc")
 
-plasma --config $DATA_DIR/test-config.yaml start &> $DATA_DIR/plasma.log &
+$GOPATH/bin/plasma --config $DATA_DIR/test-config.yaml start &> $DATA_DIR/plasma.log &
 PLASMA_PID=$!
 echo "Started plasma node, pid is ${PLASMA_PID}"
-sleep 10
 
-#plasma --config $DATA_DIR/test-config.yaml deposit --amount 200000000
+$GOPATH/bin/plasma --config $DATA_DIR/test-config.yaml deposit --amount 200000000
 #
 #plasma --config $DATA_DIR/test-config.yaml send --to ${SECOND_USER_ADDRESS} --amount 50000000
+sleep 10
 
 kill $PLASMA_PID
 sleep 1

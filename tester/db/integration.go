@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"log"
 	"math/big"
 	"reflect"
@@ -28,11 +29,20 @@ func IntegrationTest(c *cli.Context) {
 }
 
 func blockTest(storage db.PlasmaStorage) {
-	_, err := storage.BlockAtHeight(1)
-
+	data, err := storage.BlockAtHeight(1)
 	if err != nil {
 		panic(err)
+
 	}
+	fmt.Println("Data of block at height 1:")
+	fmt.Println(data)
+	data2, err2 := storage.LatestBlock()
+	if err2 != nil {
+		panic(err2)
+	}
+	fmt.Println("Blocknr of latest block:")
+	fmt.Println(data2.Header.Number)
+
 }
 
 func txTest(storage db.PlasmaStorage) {
