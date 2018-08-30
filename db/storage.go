@@ -69,6 +69,7 @@ type Storage struct {
 }
 
 func NewStorage(db *leveldb.DB, plasmaClient *eth.PlasmaClient) PlasmaStorage {
+
 	result := Storage{
 		DB:           db,
 		MemoryDB:     memdb.New(comparer.DefaultComparer, int(9*blockSize)),
@@ -84,8 +85,6 @@ func NewStorage(db *leveldb.DB, plasmaClient *eth.PlasmaClient) PlasmaStorage {
 
 	if lastBlock == nil {
 		merkle, err := result.createGenesisBlock()
-		log.Printf("Creating genessis block", merkle)
-
 		if err != nil {
 			log.Panic("Failed to get last block:", err)
 		}
@@ -94,7 +93,7 @@ func NewStorage(db *leveldb.DB, plasmaClient *eth.PlasmaClient) PlasmaStorage {
 		}
 	} else {
 		result.PrevBlockHash = lastBlock.BlockHash
-		result.CurrentBlock = lastBlock.Header.Number
+		result.CurrentBlock = 1 + lastBlock.Header.Number
 	}
 
 	return &result
