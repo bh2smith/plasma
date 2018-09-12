@@ -138,8 +138,8 @@ func (ps *Storage) doStoreTransaction(tx chain.Transaction, lock sync.Locker) er
 	tx.TxIdx = atomic.AddUint32(&ps.CurrentTxIdx, 1) - 1
 	tx.BlkNum = ps.CurrentBlock
 	lock.Unlock()
-
 	ps.Transactions[tx.TxIdx] = tx
+	fmt.Println("trasnaction has been stored in the mem pool of current transactions at position:", tx.TxIdx)
 
 	txEnc, err := rlp.EncodeToBytes(&tx)
 
@@ -151,10 +151,16 @@ func (ps *Storage) doStoreTransaction(tx chain.Transaction, lock sync.Locker) er
 	hexHash := common.ToHex(hash)
 	hashKey := txPrefixKey("hash", hexHash)
 
+	fmt.Println("trasnaction has the following data: %s, %s,:", hash, hashKey)
+
+	fmt.Println("trasnaction has the block data: %s, :", tx.BlkNum)
+
 	batch := new(leveldb.Batch)
 	batch.Put(hashKey, txEnc)
 	batch.Put(blkNumHashkey(tx.BlkNum, hexHash), txEnc)
 	batch.Put(blkNumTxIdxKey(tx.BlkNum, tx.TxIdx), txEnc)
+	fmt.Println("trasnaction has been stored with : %s, :", blkNumTxIdxKey(tx.BlkNum, tx.TxIdx))
+	fmt.Println("trasnaction has been stored with blocknur : %s, :", tx.BlkNum)
 
 	empty := []byte{}
 
@@ -181,6 +187,7 @@ func (ps *Storage) doStoreTransaction(tx chain.Transaction, lock sync.Locker) er
 		output := tx.OutputAt(1)
 		batch.Put(earn(&output.NewOwner, tx, 1), empty)
 	}
+	fmt.Println("trasnaction will be stored, it is valid")
 
 	batch.Replay(ps)
 	return nil
@@ -328,9 +335,11 @@ func (ps *Storage) ProcessDeposit(tx chain.Transaction) (prev, deposit *util.Mer
 }
 
 func (ps *Storage) FindTransactionsByBlockNum(blkNum uint64) ([]chain.Transaction, error) {
-	if blkNum >= ps.CurrentBlock {
+	if blkNum > ps.CurrentBlock {
 		return []chain.Transaction{}, nil
 	}
+	fmt.Println(" ============ starting ========:")
+
 	ps.RLock()
 	defer ps.RUnlock()
 
@@ -344,7 +353,9 @@ func (ps *Storage) FindTransactionsByBlockNum(blkNum uint64) ([]chain.Transactio
 	prefix := txPrefixKey("blkNum", strconv.FormatUint(blkNum, 10), "txIdx")
 	prefix = append(prefix, ':', ':')
 
+	fmt.Println("Prefix for all searches:", prefix)
 	iter := ps.DB.NewIterator(levelutil.BytesPrefix(prefix), nil)
+	fmt.Println("iterator", iter)
 	defer iter.Release()
 
 	for iter.Next() {
@@ -353,6 +364,7 @@ func (ps *Storage) FindTransactionsByBlockNum(blkNum uint64) ([]chain.Transactio
 		// prefix looks like "tx::blkNum::1::txIdx::"
 		// key looks like    "tx::blkNum::1::txIdx::20"
 		idx := string(iter.Key()[len(prefix):])
+		fmt.Println("index we are watchting out is:", idx)
 		txIdx, err := strconv.ParseUint(idx, 10, 64)
 		if err != nil {
 			return nil, err

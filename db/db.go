@@ -15,5 +15,7 @@ func CreateStorage(location string, client *eth.PlasmaClient) (*leveldb.DB, Plas
 	if err != nil {
 		return nil, nil, err
 	}
+	log.Printf("Creating database in %s.", loc)
+
 	return level, NewStorage(level, client), nil
 }

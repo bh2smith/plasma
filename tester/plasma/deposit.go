@@ -3,6 +3,7 @@ package plasma
 import (
 	"crypto/ecdsa"
 	"log"
+	"time"
 
 	"github.com/kyokan/plasma/util"
 	"gopkg.in/urfave/cli.v1"
@@ -36,6 +37,17 @@ func DepositIntegrationTest(c *cli.Context) {
 
 	depositValue := 1000000000
 
+	currentBlock := CurrentChildBlock(plasma, userAddress)
+
+	log.Println("Blockbefore before deposit:", currentBlock)
+
 	t := createDepositTx(userAddress, depositValue)
 	Deposit(plasma, privateKeyECDSA, userAddress, 1000000000, &t)
+
+	time.Sleep(3 * time.Second)
+
+	currentBlockNew := CurrentChildBlock(plasma, userAddress)
+
+	log.Println("Blockheight after deposit:", currentBlockNew)
+
 }

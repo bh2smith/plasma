@@ -6,6 +6,7 @@ import (
 	"github.com/kyokan/plasma/db"
 	"github.com/kyokan/plasma/plasma"
 	db_tests "github.com/kyokan/plasma/tester/db"
+	deposit_tests "github.com/kyokan/plasma/tester/deposit"
 	plasma_tests "github.com/kyokan/plasma/tester/plasma"
 	pq_tests "github.com/kyokan/plasma/tester/pq"
 	"github.com/kyokan/plasma/userclient"
@@ -123,6 +124,11 @@ func main() {
 			Name:   "plasma-tests",
 			Usage:  "Runs plasma integration tests.",
 			Action: plasma_tests.IntegrationTest,
+		},
+		{
+			Name:   "deposit-tests",
+			Usage:  "Runs plasma integration tests.",
+			Action: deposit_tests.IntegrationTest,
 		},
 		{
 			Name:   "plasma-tests2",

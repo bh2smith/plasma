@@ -26,6 +26,7 @@ func IntegrationTest(c *cli.Context) {
 
 	blockTest(storage)
 	txTest(storage)
+
 }
 
 func blockTest(storage db.PlasmaStorage) {
@@ -72,6 +73,7 @@ func txTest(storage db.PlasmaStorage) {
 			},
 		),
 	}
+	fmt.Println("length of the trasnsaction list is:", len(txs))
 
 	for _, tx := range txs {
 		err := storage.StoreTransaction(tx)
@@ -81,12 +83,18 @@ func txTest(storage db.PlasmaStorage) {
 		}
 	}
 
-	resTxs, err := storage.FindTransactionsByBlockNum(1)
+	resTxs, err := storage.FindTransactionsByBlockNum(2)
 
 	if err != nil {
 		panic(err)
 	}
 
+	fmt.Println("frist transaction is:", resTxs[0])
+
+	fmt.Println("second transaction is:", resTxs[1])
+	fmt.Println("this transaction should not exist:", resTxs[2])
+
+	fmt.Println("length of the trasnsaction list is:", len(resTxs))
 	assert(len(resTxs) == 2)
 }
 
