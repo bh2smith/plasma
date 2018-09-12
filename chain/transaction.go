@@ -61,6 +61,9 @@ func (tx *Transaction) IsDeposit() bool {
 }
 
 func (tx *Transaction) IsZeroTransaction() bool {
+	//if (tx.Input0 == nil && tx.Input1 == nil) {
+	//	return true
+	//}
 	return tx.Input0.IsZeroInput() &&
 		tx.Input1.IsZeroInput() &&
 		tx.Output0.IsZeroOutput() &&

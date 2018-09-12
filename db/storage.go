@@ -330,14 +330,20 @@ func (ps *Storage) ProcessDeposit(tx chain.Transaction) (prev, deposit *util.Mer
 }
 
 func (ps *Storage) FindTransactionsByBlockNum(blkNum uint64) ([]chain.Transaction, error) {
-    if blkNum >= ps.CurrentBlock {
+    if blkNum > ps.CurrentBlock {
         return []chain.Transaction{}, nil
     }
     ps.RLock()
     defer ps.RUnlock()
 
     if blkNum == ps.CurrentBlock {
-        return ps.Transactions, nil
+		var ret []chain.Transaction
+		for _, tx := range ps.Transactions {
+			if (!tx.IsZeroTransaction()){
+				ret = append(ret, tx)
+			}
+		}
+        return ret, nil
     }
 
     var buffer []chain.Transaction
