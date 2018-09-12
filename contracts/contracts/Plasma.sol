@@ -6,7 +6,7 @@ import './libraries/RLP.sol';
 import './libraries/SafeMath.sol';
 
 contract Plasma {
-    using SafeMath for uint256;
+    using SafeMath for uint;
     using RLP for bytes;
     using RLP for RLP.RLPItem;
     using RLP for RLP.Iterator;
@@ -24,25 +24,25 @@ contract Plasma {
     event DebugBool(address sender, bool item);
 
     address public authority;
-    mapping(uint256 => ChildBlock) public childChain;
-    mapping(uint256 => Exit) public exits;
-    uint256 public currentChildBlock;
+    mapping(uint => ChildBlock) public childChain;
+    mapping(uint => Exit) public exits;
+    uint public currentChildBlock;
     PriorityQueue public exitQueue;
-    uint256 public lastExitId;
-    uint256 public lastFinalizedTime;
+    uint public lastExitId;
+    uint public lastFinalizedTime;
 
     struct ChildBlock {
         bytes32 root;
-        uint256 created_at;
+        uint created_at;
     }
 
     struct Exit {
         address owner;
-        uint256 amount;
-        uint256 blocknum;
-        uint256 txindex;
-        uint256 oindex;
-        uint256 started_at;
+        uint amount;
+        uint blocknum;
+        uint txindex;
+        uint oindex;
+        uint started_at;
     }
 
     constructor () public {
@@ -63,10 +63,10 @@ contract Plasma {
         emit SubmitBlock(msg.sender, root);
     }
 
-    function getBlock(uint256 blocknum)
+    function getBlock(uint blocknum)
         public
         view
-        returns (bytes32, uint256)
+        returns (bytes32, uint)
     {
         ChildBlock memory blk = childChain[blocknum];
         return (blk.root, blk.created_at);
@@ -106,9 +106,9 @@ contract Plasma {
     }
 
     function startExit(
-        uint256 blocknum,
-        uint256 txindex,
-        uint256 oindex,
+        uint blocknum,
+        uint txindex,
+        uint oindex,
         bytes txBytes,
         bytes proof
     ) public
@@ -131,7 +131,7 @@ contract Plasma {
         // TODO: check that the sigs given to the utxo owner from the input owner
         // are legit from the side chain.
 
-        uint256 priority = calcPriority(blocknum, txindex, oindex);
+        uint priority = calcPriority(blocknum, txindex, oindex);
         lastExitId = priority; // For convenience and debugging.
         exitQueue.add(priority);
         
@@ -148,10 +148,10 @@ contract Plasma {
         emit ExitStarted(msg.sender, priority);
     }
 
-    function getExit(uint256 exitId)
+    function getExit(uint exitId)
         public
         view
-        returns (address, uint256, uint256, uint256, uint256, uint256)
+        returns (address, uint, uint, uint, uint, uint)
     {
         Exit memory exit = exits[exitId];
 
@@ -159,12 +159,13 @@ contract Plasma {
     }
 
     function challengeExit(
-        uint256 exitId,
-        uint256 blocknum,
-        uint256 txindex,
+        uint exitId,
+        uint blocknum,
+        uint txindex,
         bytes txBytes,
         bytes proof
-    ) public
+    ) 
+        public
     {
         Exit memory currExit = exits[exitId];
         RLP.RLPItem memory txItem = txBytes.toRLPItem();
@@ -183,7 +184,7 @@ contract Plasma {
         if (exists) {
             require(currExit.amount > 0);
 
-            uint256 burn;
+            uint burn;
             if (currExit.owner.balance < currExit.amount) {
                 burn = currExit.owner.balance;
             } else {
@@ -211,8 +212,8 @@ contract Plasma {
 
     // TODO: move into merkle file.
     function checkProof(
-        uint256 blocknum,
-        uint256 txindex,
+        uint blocknum,
+        uint txindex,
         bytes txBytes,
         bytes proof
     ) 
@@ -240,7 +241,7 @@ contract Plasma {
             if (txindex % 2 == 0) {
                 otherRoot = keccak256(abi.encodePacked(otherRoot, sibling));
             } else {
-                otherRoot = keccak256(sibling, otherRoot);
+                otherRoot = keccak256(abi.encodePacked(sibling, otherRoot));
             }
             
             txindex = txindex / 2;
@@ -253,13 +254,13 @@ contract Plasma {
     // If root node doesn't finalize, and validators finalize,
     // validators have to pay.
     // Finalizing is an expensive operation if the queue is large.
-    function finalize() {
+    function finalize() public {
         if (!shouldFinalize()) {
             return;
         }
 
         lastFinalizedTime = block.timestamp;
-        uint256 exitId = exitQueue.pop();
+        uint exitId = exitQueue.pop();
         while(exitId != SafeMath.max()) {
             Exit memory currExit = exits[exitId];
 
@@ -268,7 +269,7 @@ contract Plasma {
                 currExit.owner != address(0) &&
                 currExit.amount > 0
             ) {
-                currExit.owner.send(currExit.amount);
+                currExit.owner.transfer(currExit.amount);
                 
                 exits[exitId] = Exit({
                     owner: address(0),
@@ -278,7 +279,7 @@ contract Plasma {
                     oindex: 0,
                     started_at: 0
                 });
-                FinalizeExit(msg.sender, exitId);
+                emit FinalizeExit(msg.sender, exitId);
             }
 
             exitId = exitQueue.pop();
@@ -286,23 +287,24 @@ contract Plasma {
     }
 
     // Periodically monitor if we should finalize
-    function shouldFinalize() constant returns (bool) {
+    function shouldFinalize() public constant returns (bool) {
         // Not used for testing
-        // return block.timestamp > lastFinalizedTime + 2 days;
-        return true;
+        return block.timestamp > lastFinalizedTime + 2 days;
+        // return true;
     }
 
-    function isFinalizableTime(uint256 timestamp) constant returns (bool) {
+    function isFinalizableTime(uint timestamp) public constant returns (bool) {
         // Not used for testing
-        // return block.timestamp > timestamp + 14 days;
-        return true;
+        return block.timestamp > timestamp + 14 days;
+        // return true;
     }
 
     function calcPriority(
-        uint256 blocknum,
-        uint256 txindex,
-        uint256 oindex
-    ) constant returns (uint256) {
+        uint blocknum,
+        uint txindex,
+        uint oindex
+    ) 
+        public pure returns (uint) {
         // For now always allow the earliest block to be in the front
         // of the queue.  Don't care about 7 day cliff.
         return blocknum * 1000000000 + txindex * 10000 + oindex;
