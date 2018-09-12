@@ -45,7 +45,7 @@ contract Plasma {
         uint256 started_at;
     }
 
-    constructor() {
+    constructor () public {
         authority = msg.sender;
         currentChildBlock = 1;
         lastFinalizedTime = block.timestamp;
@@ -60,7 +60,7 @@ contract Plasma {
         });
         currentChildBlock = currentChildBlock.add(1);
 
-        SubmitBlock(msg.sender, root);
+        emit SubmitBlock(msg.sender, root);
     }
 
     function getBlock(uint256 blocknum)
@@ -90,16 +90,16 @@ contract Plasma {
 
         currentChildBlock = currentChildBlock.add(1);
 
-        Deposit(msg.sender, msg.value);
+        emit Deposit(msg.sender, msg.value);
     }
 
-    function createSimpleMerkleRoot(bytes txBytes) returns (bytes32) {
+    function createSimpleMerkleRoot(bytes txBytes) public pure returns (bytes32) {
         // TODO: We may want a different null value.
         bytes32 zeroHash = keccak256(hex"0000000000000000000000000000000000000000000000000000000000000000");
         bytes32 root = keccak256(txBytes);
         
         for (uint i = 0; i < 15; i++) {
-            root = keccak256(root, zeroHash);
+            root = keccak256(abi.encodePacked(root, zeroHash));
         }
 
         return root;
@@ -145,7 +145,7 @@ contract Plasma {
             started_at: block.timestamp
         });
 
-        ExitStarted(msg.sender, priority);
+        emit ExitStarted(msg.sender, priority);
     }
 
     function getExit(uint256 exitId)
@@ -174,7 +174,7 @@ contract Plasma {
         bool secondInput = txList[3].toUint() == currExit.blocknum && txList[4].toUint() == currExit.txindex && txList[5].toUint() == currExit.oindex;
 
         if(!firstInput && !secondInput) {
-            ChallengeFailure(msg.sender, exitId);
+            emit ChallengeFailure(msg.sender, exitId);
             return;
         }
 
@@ -190,7 +190,7 @@ contract Plasma {
                 burn = currExit.amount;
             }
 
-            currExit.owner.send(-burn);
+            currExit.owner.transfer(-burn);
 
             exits[exitId] = Exit({
                 owner: address(0),
@@ -203,9 +203,9 @@ contract Plasma {
 
             exitQueue.remove(exitId);
 
-            ChallengeSuccess(msg.sender, exitId);
+            emit ChallengeSuccess(msg.sender, exitId);
         } else {
-            ChallengeFailure(msg.sender, exitId);
+            emit ChallengeFailure(msg.sender, exitId);
         }
     }
 
@@ -215,7 +215,10 @@ contract Plasma {
         uint256 txindex,
         bytes txBytes,
         bytes proof
-    ) returns (bool)
+    ) 
+        public
+        view
+        returns (bool)
     {
         // TODO: might need to adjust depth
         require(proof.length == 15 * 32);
@@ -235,7 +238,7 @@ contract Plasma {
             j += 32;
 
             if (txindex % 2 == 0) {
-                otherRoot = keccak256(otherRoot, sibling);
+                otherRoot = keccak256(abi.encodePacked(otherRoot, sibling));
             } else {
                 otherRoot = keccak256(sibling, otherRoot);
             }
